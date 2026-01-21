@@ -47,16 +47,15 @@ def move_month(delta):
     else:
         st.session_state.view_month = new_month
 
-# --- 2. CSS: 글자 짤림 방지 및 레퍼런스 디자인 적용 ---
+# --- 2. CSS: 모바일 가로 7열 고정 및 여백 최적화 ---
 st.markdown(f"""
     <style>
-    /* 배경 설정 */
     .stApp {{ background-color: #000000 !important; }}
     h1, h2, h3, h4, p, span, div, label {{ color: #FFFFFF !important; font-family: 'Apple SD Gothic Neo', sans-serif; }}
 
-    /* [해결] 글자 짤림 방지: 상단 여백을 충분히 확보 */
+    /* 상단 여백 확보 및 타이틀 짤림 방지 */
     .block-container {{ 
-        padding-top: 4rem !important; 
+        padding-top: 5rem !important; 
         padding-bottom: 2rem !important;
     }}
     
@@ -64,79 +63,87 @@ st.markdown(f"""
         font-size: 28px; 
         font-weight: 800; 
         text-align: center; 
-        margin-bottom: 10px;
-        line-height: 1.4;
+        margin-bottom: 20px;
     }}
 
-    /* 캘린더 컨테이너 */
+    /* [핵심] 모바일에서도 가로 7열 유지 */
+    [data-testid="stHorizontalBlock"] {{
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+    }}
+    [data-testid="column"] {{
+        width: 14.28% !important;
+        flex: 1 1 14.28% !important;
+        min-width: 14.28% !important;
+    }}
+
     .calendar-container {{
         background-color: #111111 !important;
-        padding: 20px 10px !important; 
+        padding: 20px 0px !important; 
         border-radius: 25px !important;
         border: 1px solid #333333 !important; 
         margin-bottom: 30px !important;
     }}
 
-    .weekday-header div {{ color: #888888 !important; font-weight: 700; font-size: 13px; text-align: center; }}
+    .weekday-header div {{ color: #888888 !important; font-weight: 700; font-size: 11px; text-align: center; }}
     
-    /* [해결] 날짜 셀: 고정 높이와 중앙 정렬 보장 */
     .day-cell {{
         display: flex !important; 
         flex-direction: column !important;
         align-items: center !important; 
         justify-content: flex-start !important;
-        height: 85px !important; 
+        height: 75px !important; 
         position: relative !important;
     }}
 
-    /* 버튼 스타일: 원형 배경 고정 */
+    /* 원형 버튼 디자인 */
     [data-testid="stButton"] > button {{
         background-color: transparent !important; 
         color: #FFFFFF !important;
         border: none !important; 
-        width: 44px !important; 
-        height: 44px !important; 
-        font-size: 18px !important; 
+        width: 36px !important; 
+        height: 36px !important; 
+        font-size: 16px !important; 
         border-radius: 50% !important;
+        padding: 0 !important; 
         display: flex !important; 
         align-items: center !important; 
         justify-content: center !important; 
-        margin: 0 auto !important; 
-        padding: 0 !important;
+        margin: 0 auto !important;
     }}
 
-    /* 오늘 날짜: 빨간 원 */
     .is-today [data-testid="stButton"] > button {{
         background-color: #FF4B4B !important; 
         color: #FFFFFF !important; 
         font-weight: 800 !important;
     }}
 
-    /* 선택된 날짜: 흰색 원 */
     .is-selected [data-testid="stButton"] > button {{
         background-color: #FFFFFF !important; 
         color: #000000 !important; 
         font-weight: 800 !important;
     }}
 
-    /* 오늘이면서 선택됨 */
     .is-today.is-selected [data-testid="stButton"] > button {{
         background-color: #FFFFFF !important; 
         color: #000000 !important;
-        border: 4px solid #FF4B4B !important;
+        border: 3px solid #FF4B4B !important;
     }}
 
-    /* [해결] 점(Dot) 정렬: 숫자 바로 아래 정중앙 배치 */
+    /* 점(Dot) 정렬 */
     .dot-row {{
         display: flex !important; 
         justify-content: center !important; 
-        gap: 4px !important; 
+        gap: 3px !important; 
         width: 100% !important; 
         margin-top: 4px !important;
     }}
     .event-dot {{ 
-        width: 8px !important; 
-        height: 8px !important; 
+        width: 7px !important; 
+        height: 7px !important; 
         border-radius: 50% !important; 
     }}
     .dot-파랑 {{ background-color: {COLOR_MAP['파랑']} !important; }}
@@ -144,15 +151,12 @@ st.markdown(f"""
     .dot-초록 {{ background-color: {COLOR_MAP['초록']} !important; }}
     .dot-보라 {{ background-color: {COLOR_MAP['보라']} !important; }}
     
-    /* 일정 목록 카드 왼쪽 세로 줄 */
     .schedule-card {{
         background-color: #1A1A1A !important; 
         padding: 15px 20px !important;
         border-radius: 18px !important; 
         margin-bottom: 12px !important;
-        border-left: 7px solid #3182F6 !important;
-        display: flex;
-        flex-direction: column;
+        border-left: 6px solid #3182F6 !important;
     }}
     </style>
     """, unsafe_allow_html=True)
@@ -160,16 +164,16 @@ st.markdown(f"""
 # --- 3. UI 레이아웃 ---
 st.markdown('<div class="main-header">스케줄러</div>', unsafe_allow_html=True)
 
-c1, c2, c3, c4 = st.columns([1, 4, 1, 1])
+# 네비게이션 영역
+c1, c2, c3, c4 = st.columns(4)
 with c1:
     if st.button("◀", key="m_prev"): move_month(-1); st.rerun()
 with c2:
-    st.markdown(f'<h3 style="text-align:center; margin:0; line-height:1.2;">{st.session_state.view_year}년 {st.session_state.view_month}월</h3>', unsafe_allow_html=True)
+    st.markdown(f'<div style="text-align:center; font-size:16px; font-weight:700;">{st.session_state.view_month}월</div>', unsafe_allow_html=True)
 with c3:
     if st.button("▶", key="m_next"): move_month(1); st.rerun()
 with c4:
     with st.popover("➕"):
-        st.write("### 일정 추가")
         t_title = st.text_input("제목")
         t_cat = st.selectbox("분류", list(COLOR_MAP.keys()))
         t_date = st.date_input("날짜", value=date(2026, 1, 20))
@@ -184,12 +188,13 @@ with c4:
 
 # --- 4. 캘린더 그리드 ---
 st.markdown('<div class="calendar-container">', unsafe_allow_html=True)
-st.markdown('<div style="display:flex; justify-content:space-between; margin-bottom:18px; padding: 0 10px;">'
-            '<div class="weekday-header" style="width:14%; color:#FF4B4B !important;">일</div>'
-            '<div class="weekday-header" style="width:14%;">월</div><div class="weekday-header" style="width:14%;">화</div>'
-            '<div class="weekday-header" style="width:14%;">수</div><div class="weekday-header" style="width:14%;">목</div>'
-            '<div class="weekday-header" style="width:14%;">금</div>'
-            '<div class="weekday-header" style="width:14%; color:#3182F6 !important;">토</div></div>', unsafe_allow_html=True)
+# 요일 헤더
+st.columns(7)
+cols_header = st.columns(7)
+weekdays = ["일", "월", "화", "수", "목", "금", "토"]
+for i, wd in enumerate(weekdays):
+    color = "#FF4B4B" if i == 0 else ("#3182F6" if i == 6 else "#888888")
+    cols_header[i].markdown(f'<div class="weekday-header" style="color:{color} !important;">{wd}</div>', unsafe_allow_html=True)
 
 today_str = "2026-01-20"
 cal_matrix = calendar.monthcalendar(st.session_state.view_year, st.session_state.view_month)
@@ -213,14 +218,13 @@ for week in cal_matrix:
                     st.session_state.selected_date = d_str
                     st.rerun()
                 
-                # 점(Dot) 중앙 정렬
                 if day_tasks:
                     st.markdown('<div class="dot-row">', unsafe_allow_html=True)
                     for t in day_tasks[:2]:
                         st.markdown(f'<div class="event-dot dot-{t.get("category", "파랑")}"></div>', unsafe_allow_html=True)
                     st.markdown('</div>', unsafe_allow_html=True)
                 else:
-                    st.markdown('<div class="dot-row" style="height:10px;"></div>', unsafe_allow_html=True)
+                    st.markdown('<div class="dot-row" style="height:7px;"></div>', unsafe_allow_html=True)
                 st.markdown('</div>', unsafe_allow_html=True)
 
 st.markdown('</div>', unsafe_allow_html=True)
@@ -236,9 +240,9 @@ else:
     for task in display_tasks:
         cat_color = COLOR_MAP.get(task.get('category', '파랑'), "#3182F6")
         st.markdown(f"""
-            <div class="schedule-card" style="border-left: 7px solid {cat_color};">
-                <div style="color: {cat_color}; font-weight: 800; font-size: 14px; margin-bottom: 2px;">{task['time']}</div>
-                <div style="font-size: 17px; font-weight: 600;">{task['title']}</div>
+            <div class="schedule-card" style="border-left: 6px solid {cat_color};">
+                <div style="color: {cat_color}; font-weight: 800; font-size: 13px;">{task['time']}</div>
+                <div style="font-size: 16px; font-weight: 600;">{task['title']}</div>
             </div>
         """, unsafe_allow_html=True)
         if st.button("삭제", key=f"del_{task['id']}"):
